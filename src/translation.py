@@ -136,7 +136,7 @@ def initialize_processors():
         output[i].numberOfTasks = 0;
 
 
-def schedule_dag(id: int) -> None:
+def schedule_dag(id: int) -> None: #FIX THIS
     # schedule all tasks from input[id]
     # ONLY IN THE SAMPLE TEST we assume that task ids are smaller than N (for simplicity of sample solution) which is NOT TRUE for general case!
     current: dependency = input[id].firstDependency
@@ -176,7 +176,7 @@ def schedule_dag(id: int) -> None:
             list = list.next
 
     # topsort[0 .... topsortSize - 1] is list of task IDs sorted in topological order
-    for(int i=0;i<topsortSize;i++):
+    for i in range(topsortSize): 
         int currentID = topsortOrder[i]
         # we schedule tasks on the processors cyclically
         int finish = schedule_task(i % numberOfProcessors, earliestStart[i % numberOfProcessors][currentID], currentID, executionTime[currentID]);
