@@ -467,6 +467,7 @@ void scheduler()
 
 int main(int argc, char *argv[])
 {
+
     // fill output table[0 - 7] (8 processors), in each structure put IDs of scheduled tasks as described above
     reader_function(argv[1]);
     initialize_processors();
