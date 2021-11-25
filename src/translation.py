@@ -47,7 +47,7 @@ def initialize(whichDag: int) -> None:
     input[whichDag].firstDependency = None
     input[whichDag].firstTask = None
 
-
+#run for every task
 def add_task_to_list(whichDag: int, taskID: int, executionTime: int, taskType: int) -> None:
   if(input[whichDag].lastTask == None):
     input[whichDag].listOfTasks = task()
@@ -58,10 +58,11 @@ def add_task_to_list(whichDag: int, taskID: int, executionTime: int, taskType: i
     input[whichDag].lastTask = input[whichDag].lastTask.next
   input[whichDag].lastTask.taskID = taskID
   input[whichDag].lastTask.executionTime = executionTime
-  input[whichDag].astTask.taskType = taskType
+  input[whichDag].lastTask.taskType = taskType
   input[whichDag].lastTask.next = None
   return
 
+#run for every dependency
 def add_dependency_to_list(whichDag: int, beforeID: int, afterID: int, transferTime: int) -> None:
   if(input[whichDag].lastDependency is None):
     input[whichDag].listOfDependencies = dependency()
@@ -92,3 +93,100 @@ def print_dag_dependencies(whichDag: int) -> None: # "whichDag" is index of DAG 
 
 ## stopped here for now
 ## @ reader_funtion
+
+
+
+
+inDegree[N]: int # auxiliary array ONLY for sample scheduler
+topsortOrder[N]: int; #auxiliary array ONLY for sample scheduler
+earliestStart[numberOfProcessors][N]: int; #auxiliary array ONLY for sample scheduler
+executionTime[N]: int  #auxiliary array ONLY for sample scheduler
+taskType[N]: int #auxiliary array ONLY for sample scheduler
+
+def schedule_task(procID: int, earliestPossibleStart: int, taskID: int, execTime: int): int
+    # schedule task at processing node, after previously scheduled tasks
+    lastFinish: int = 0
+    taskCount: int = output[procID].numberOfTasks
+    if(taskCount > 0) lastFinish = output[procID].startTime[taskCount - 1] + output[procID].execTime[taskCount - 1]
+    if(earliestPossibleStart > lastFinish) lastFinish = earliestPossibleStart
+
+    # check if task of the same was in the nearest past
+    history: int = 0
+    cache: bool = false
+    for(int j=taskCount-1;j>=0;j--){ #fix tis
+        if(taskType[output[procID].taskIDs[j]] == taskType[taskID]) cache = true
+        history += 1;
+        if(history == historyOfProcessor) break;
+    }
+    if(cache){
+        # possibly 10% shorter execution time
+        execTime *= 9;
+        execTime /= 10;
+    }
+    output[procID].startTime[taskCount] = lastFinish
+    output[procID].execTime[taskCount] = execTime
+    output[procID].taskIDs[taskCount] = taskID
+    output[procID].numberOfTasks += 1
+    return lastFinish + execTime
+
+
+def initialize_processors():
+    for i in range(numberOfProcessors): # CHECK THIS IS RIGHT
+        //initializes processors with 0 tasks each
+        output[i].numberOfTasks = 0;
+
+
+def schedule_dag(id: int) -> None:
+    # schedule all tasks from input[id]
+    # ONLY IN THE SAMPLE TEST we assume that task ids are smaller than N (for simplicity of sample solution) which is NOT TRUE for general case!
+    current: dependency = input[id].firstDependency
+    while(current != None):
+        from: int = current.beforeID
+        to: int = current.afterID
+        inDegree[to] += 1
+        current = current.next
+    
+    topsortSize: int = 0
+    topsortPtr: int = 0
+    ptr: task = input[id].firstTask
+    arrivalTime: int = input[id].arrivalTime
+
+    # initialize topsort array
+    while(ptr != None):
+        id: int = ptr.taskID
+        if(inDegree[id] == 0):
+            topsortOrder[topsortSize++] = id
+        executionTime[id] = ptr.executionTime
+        taskType[id] = ptr.taskType
+        for i in range(numberOfProcessors):
+            earliestStart[i][id] = arrivalTime
+        ptr = ptr.next
+
+    # add all tasks to topsort array
+    while(topsortPtr < topsortSize){
+        int currentID = topsortOrder[topsortPtr++]
+        struct dependency * list = input[id].firstDependency
+        while(list != None):
+            from: int = list.beforeID
+            to: int = list.afterID
+            if(currentID == from):
+                inDegree[to]--
+                if(inDegree[to] == 0):
+                    topsortOrder[topsortSize++] = to
+            list = list.next
+
+    # topsort[0 .... topsortSize - 1] is list of task IDs sorted in topological order
+    for(int i=0;i<topsortSize;i++):
+        int currentID = topsortOrder[i]
+        # we schedule tasks on the processors cyclically
+        int finish = schedule_task(i % numberOfProcessors, earliestStart[i % numberOfProcessors][currentID], currentID, executionTime[currentID]);
+        list: dependency = input[id].firstDependency;
+        while(list != None):
+            from: int = list.beforeID;
+            to: int = list.afterID;
+            if(from == currentID):
+                for(int proc=0;proc<numberOfProcessors;proc++):
+                    bestTime: int = finish + list.transferTime * (proc != (i % numberOfProcessors));
+                    if(bestTime > earliestStart[proc][to]):
+                        earliestStart[proc][to] = bestTime;
+            list = list.next;
