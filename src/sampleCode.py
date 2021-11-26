@@ -39,7 +39,7 @@ class Dependency:
     beforeID: int
     afterID: int
     transferTime: int
-    next: list
+    next: list # go to v2.py in drake dir
 
 
 class DAG:
@@ -134,7 +134,6 @@ def reader_function(filename):
     # Read sample json file
     f = open('sample.json', 'r')
     data = json.load(f)
-
     # For each top-level data point in data
     for d in data:
         # tasks for each dag
@@ -144,6 +143,7 @@ def reader_function(filename):
         dagInput.append(None) 
         initialize(dagsCount)
         # Init dag attrs
+        dag.dagID = int(data[d][3:]) # "DAG0" -> 0
         dag.dagType = data[d]['Type']
         dag.arrivalTime = data[d]['ArrivalTime']
         dag.deadlineTime = data[d]['Deadline']
@@ -156,7 +156,7 @@ def reader_function(filename):
             # Gets the task obj
             dagTask = data[d][dagTask]
             # Set task attrs
-            task.taskID = taskKeys[index]
+            task.taskID = int(taskKeys[index][4:]) # "TASK1" -> 1
             task.executionTime = dagTask['EET']
             task.taskType = dagTask['Type']
             task.next = list(dagTask['next'])

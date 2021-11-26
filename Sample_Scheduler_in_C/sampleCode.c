@@ -141,8 +141,9 @@ void reader_function(char *filename)
                 if (typeR == json_type_object)
                 {
                     char buffer[20];
-                    int taskID = atoi(strncpy(buffer, &keyR[4], 20));
-
+                    int taskID = atoi(strncpy(buffer, &keyR[4], 20)); // this method takes a string slices then parses it to int
+                    // 
+                    // example 1, 2, 3, 4, 0001 yes but wait a sec
                     struct json_object *executionTime, *taskType;
                     json_object_object_get_ex(valR, "EET", &executionTime);
                     json_object_object_get_ex(valR, "Type", &taskType);

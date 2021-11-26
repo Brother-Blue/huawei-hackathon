@@ -1,0 +1,8 @@
+How to run the saple scheduler code
+open terminal and type:
+
+gcc sampleCode.c -o sample.out -ljson-c -lm
+./sample.out sample.json output_sample.csv
+
+We use libjson-c-dev library for both sample solution and template code.
+In order to install it on linux use: sudo apt install libjson-c-dev
