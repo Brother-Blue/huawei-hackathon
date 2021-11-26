@@ -59,9 +59,9 @@ class DAG(Node):
     listOfDependencies: list = field(
         default_factory=list
     )  # all edges (dependencies) of DAG (None if there are no dependencies)
-    lastTask: Task = Task()
+    lastTask: Task = None
     lastDependency: Dependency = Dependency()
-    firstTask: Task = Task()
+    firstTask: Task = None
     firstDependency: Dependency = Dependency()
 
 
@@ -96,44 +96,42 @@ output: list = [ProcessorSchedule() for i in range(numProcessors)]
 begin = time
 end = time
 
-dagsList: LinkedList = LinkedList()  # [DAG() for i in N]
+dagsList: list = [DAG()] * N
 dagsCount: int = 0
 
 inDegree: list = [0] * N  # auxiliary array ONLY for sample scheduler
-topsortOrder: list = [None] * N  # auxiliary array ONLY for sample scheduler
+topsortOrder: list = [0] * N  # auxiliary array ONLY for sample scheduler
 earliestStart: list = [
-    [None] * N for i in range(numProcessors)
+    [0] * N for i in range(numProcessors)
 ]  # [numProcessors][[None] * N]        # auxiliary array ONLY for sample scheduler
-executionTime: list = [None] * N  # auxiliary array ONLY for sample scheduler
-taskType: list = [None] * N  # auxiliary array ONLY for sample scheduler
+executionTime: list = [0] * N  # auxiliary array ONLY for sample scheduler
+taskType: list = [0] * N  # auxiliary array ONLY for sample scheduler
 
 # Ya like dags?
 def add_task_to_list(dagIndex, taskID, executionTime, taskType):
+    #global dagsList
     """
     Create a linked list if no task exists
     If a task exists, append it to the end of the list
     Set prev Task.next -> newTask
     Set newTask.next -> None
     """
-    dag = DAG()
-    if dagsList.head == None:
-        dag.listOfTasks = Task()
-        dag.lastTask = dag.listOfTasks
-        dag.firstTask = dag.lastTask
-        dagsList.head = dag
-    # Append a new task to the list
+    if dagsList[dagIndex].lastTask == None:
+        debug('pingus')
+        dagsList[dagIndex].listOfTasks = Task()
+        debug(dagsList[dagIndex].listOfTasks)
+        dagsList[dagIndex].lastTask = dagsList[dagIndex].listOfTasks
+        debug(dagsList[dagIndex].lastTask)
+        dagsList[dagIndex].firstTask = dagsList[dagIndex].lastTask
+        debug(dagsList[dagIndex].firstTask)
     else:
-        while dagsList.head.next != None:
-            dag = dagsList.head.next
-        dag.lastTask.next = Task()
-        dag.lastTask = dag.lastTask.next
-    # Add in the task details
-    dag.lastTask.taskID = taskID
-    dag.lastTask.executionTime = executionTime
-    dag.lastTask.taskType = taskType
-    # Update the 'next' pointer
-    dag.next = None
-
+        debug('Dongus')
+        dagsList[dagIndex].lastTask.next = Task()
+        dagsList[dagIndex].lastTask = dagsList[dagIndex].lastTask.next
+    dagsList[dagIndex].lastTask.taskID = taskID
+    dagsList[dagIndex].lastTask.executionTime = executionTime
+    dagsList[dagIndex].lastTask.taskType = taskType
+    dagsList[dagIndex].lastTask.next = None
 
 def add_dependency_to_list(dag, beforeID, afterID, transferTime):
     """
@@ -179,6 +177,10 @@ def print_dag_dependencies(dag):
     print("\n")
 
 
+# EET -> executionTime
+# Type -> taskType
+# next -> next
+
 def reader_function(filename):
     global dagsCount
     global numProcessors
@@ -187,58 +189,120 @@ def reader_function(filename):
     global end
     global output
     global dagsList
-    """
-    Reads in DAG data from a given json file (see sample.json)
-    Initializes all DAGs with the given data.
-    """
-    # Read sample json file
     with open(filename, "r") as f:
-        data = json.load(f)
-
-        # For each top-level data point in data
-        for d in data:
-            dag = DAG()
-            # Needed to avoid out of bounds
-            #dagsList.append(None)
-            # initialize(dagsCount)
-            #dagsList[dagsCount] = dag
-            # Init dag attrs
-            # TODO: Find out why they use [3:20]
-            dag.dagID = int(d[3:20])  # "DAG0" -> 0
-            dag.dagType = data[d]["Type"]
-            dag.arrivalTime = data[d]["ArrivalTime"]
-            dag.deadlineTime = data[d]["Deadline"]
-            # Filter out dag keys where they contain 'Task'
-            taskKeys = list(filter(lambda key: "Task" in str(key), data[d].keys()))
-            # tasks for each dag
-            tasks = [None] * len(taskKeys)
-            # For each Task key
-            for index, dagTask in enumerate(taskKeys):
-                task = Task()
-                # Gets the task obj
-                dagTask = data[d][dagTask]
-                # Set task attrs
-                # TODO: Find out why they use [4:20]
-                task.taskID = int(taskKeys[index][4:20])  # "TASK1" -> 1
-                task.executionTime = dagTask["EET"]
-                task.taskType = dagTask["Type"]
-                task.next = list(dagTask["next"])  # Task2, Task4
-                add_task_to_list(
-                    dagsCount, task.taskID, task.executionTime, task.taskType
-                )
-                for innerTask in task.next:
-                    transferTime = int(dagTask["next"].get(innerTask))
-                    innerTaskID = int(innerTask[4:20])
-                    add_dependency_to_list(
-                        dagsCount, task.taskID, innerTaskID, transferTime
-                    )
-                    # print_dag_dependencies(dag)
-                # Append to tasks list
-                tasks[index] = task
-            # Set dag listOfTasks
-            dag.listOfTasks = tasks
-            dagsCount = +1
+        file = json.load(f)
         f.close()
+    for dag, tasks in file.items():
+        task: str
+        tasksList = []
+        innerTasks = []
+        for task in tasks:
+            t = Task()
+            # the value of the task
+            # value = tasks[task]
+            isDict = type(tasks[task]) is dict
+            if isDict:
+                taskID = int(task[4:20])
+
+                if "next" in tasks[task]:
+                    exists: bool  = True
+                    edges = tasks[task]["next"]
+                else:
+                    exists: bool  = False
+
+            if isDict and "EET" in tasks[task]:
+                exeTime = tasks[task]["EET"]
+
+            if isDict and "Type" in tasks[task]:
+                _type = tasks[task]["Type"]
+
+            t.taskID = taskID
+            t.executionTime = exeTime
+            t.type = _type            
+            add_task_to_list(dagsCount, taskID, exeTime, _type)
+
+            if exists:
+                for k, v in edges.items():
+                    if v:
+                        transferTime: int = int(v)
+                        afterID: int = int(k[4:20])
+                        innerTasks.append({afterID: v})
+                        add_dependency_to_list(dagsCount, taskID, afterID, transferTime)
+                t.next = innerTasks
+            
+            dagsList[dagsCount].listOfTasks.append(t)
+            #debug(dagsList[dagsCount].listOfTasks)
+            dagsList[dagsCount].dagType = tasks["Type"]
+            dagsList[dagsCount].arrivalTime = tasks["ArrivalTime"]
+            dagsList[dagsCount].deadlineTime = tasks["Deadline"] + dagsList[dagsCount].arrivalTime
+            dagsList[dagsCount].dagID = int(dag[3:20])
+            dagsCount = dagsCount + 1
+
+
+# def reader_function(filename):
+#     global dagsCount
+#     global numProcessors
+#     global histOfProcessor
+#     global begin
+#     global end
+#     global output
+#     global dagsList
+#     """
+#     Reads in DAG data from a given json file (see sample.json)
+#     Initializes all DAGs with the given data.
+#     """
+#     # Read sample json file
+#     with open(filename, "r") as f:
+#         data = json.load(f)
+
+#         # For each top-level data point in data
+#         for d in data:
+#             dag = DAG()
+#             # Needed to avoid out of bounds
+#             #dagsList.append(None)
+#             # initialize(dagsCount)
+#             #dagsList[dagsCount] = dag
+#             # Init dag attrs
+#             # TODO: Find out why they use [3:20]
+#             dag.dagID = int(d[3:20])  # "DAG0" -> 0
+#             dag.dagType = data[d]["Type"]
+#             dag.arrivalTime = data[d]["ArrivalTime"]
+#             dag.deadlineTime = data[d]["Deadline"]
+#             # Filter out dag keys where they contain 'Task'
+#             taskKeys = list(filter(lambda key: "Task" in str(key), data[d].keys()))
+#             # tasks for each dag
+#             tasks = [None] * len(taskKeys)
+#             # For each Task key
+#             for index, dagTask in enumerate(taskKeys):
+#                 task = Task()
+#                 # Gets the task obj
+#                 dagTask = data[d][dagTask]
+#                 # Set task attrs
+#                 # TODO: Find out why they use [4:20]
+#                 task.taskID = int(taskKeys[index][4:20])  # "TASK1" -> 1
+#                 task.executionTime = dagTask["EET"]
+#                 task.taskType = dagTask["Type"]
+#                 innerTasks = list(dagTask["next"])  # Task2, Task4
+#                 add_task_to_list(
+#                     dagsCount, task.taskID, task.executionTime, task.taskType
+#                 )
+#                 for innerTask in innerTasks:
+#                     transferTime = int(dagTask["next"].get(innerTask))
+#                     innerTaskID = int(innerTask[4:20])
+
+#                     task.next.append(innerTask)
+#                     add_dependency_to_list(
+#                         dagsCount, task.taskID, innerTaskID, transferTime
+#                     )
+#                 debug(task.next)
+#                 # print_dag_dependencies(dag)
+#                 # Append to tasks list
+#                 tasks[index] = task
+#             # Set dag listOfTasks
+#             dag.listOfTasks = tasks
+#             dagsList[dagsCount] = dag
+#             dagsCount = +1
+#         f.close()
 
 
 def cmp_aux(arg11, arg22):
@@ -278,31 +342,34 @@ def printer_function(filename: str) -> None:
     with open(filename, "w") as f:
         for i in range(numProcessors):
             for j in range(output[i].numberOfTasks):
+                pass
+                #debug(output[i].startTime[j] + output[i].exeTime[j])
                 f.write(
-                    f"{output[i].taskIDs[j]} {output[i].startTime[j]} {output[i].startTime[j] + output[i].exeTime[j]},"
+                    f"{output[i].taskIDs[j]} \
+                        {output[i].startTime[j]} \
+                        {output[i].startTime[j] + output[i].exeTime[j]},"
                 )
             f.write("\n")
         taskNumber: int = 0
         worstMakespan: float = 0
         for i in range(dagsCount):
             currentTask: Task = dagsList[i].firstTask
-            debug(f"line:{get_line()} -> current:{dagsList[i].firstTask}")
-            while currentTask != None:
+            while currentTask:
                 taskNumber += 1
                 worstMakespan += currentTask.executionTime
                 currentTask = currentTask.next
             dep: Dependency = dagsList[i].firstDependency
-            while dep != None:
+            while dep:
                 worstMakespan += dep.transferTime
                 dep = dep.next
         makespan: float = 0.0
         for i in range(numProcessors):
+            #debug(output[i].numberOfTasks)
             count: int = output[i].numberOfTasks
             if count == 0:
                 continue
             if output[i].startTime[count - 1] + output[i].exeTime[count - 1] > makespan:
                 makespan = output[i].startTime[count - 1]
-                debug(f"line:{get_linenumber()} -> makespan:{makespan}")
         f.write(f"{makespan}\n")
 
         sumOfSquares: float = 0.0
@@ -310,25 +377,23 @@ def printer_function(filename: str) -> None:
         for i in range(numProcessors):
             length: float = 0.0
             for j in range(output[i].numberOfTasks):
-                p(output[i].exeTime[j])
                 length += output[i].exeTime[j]
-            debug(f"line:{get_linenumber()} -> makespan:{makespan}")
-            # sumOfSquares += float(length * 1.0 / makespan) * float(length * 1.0 / makespan)
-            # _sum += length / makespan
+            sumOfSquares += float(length * 1.0 / makespan) * float(length * 1.0 / makespan)
+            _sum += length / makespan
         sumOfSquares /= numProcessors
         _sum /= numProcessors
         _sum *= _sum
         sumOfSquares -= _sum
         stdev: float = math.sqrt(sumOfSquares)
         f.write(f"{stdev}\n")
-        table1: list = [None] * N  # numpy.empty(N, dtype=TaskWithDeadline)
-        table2: list = [None] * N  # numpy.empty(N, dtype=TaskWithFinishTime)
+        table1: list = [TaskWithDeadline()] * N  # numpy.empty(N, dtype=TaskWithDeadline)
+        table2: list = [TaskWithFinishTime()] * N  # numpy.empty(N, dtype=TaskWithFinishTime)
         done: int = 0
         for i in range(dagsCount):
             now: Task = dagsList[i].listOfTasks
-            while now != None:
+            while now:
                 currentTaskWithDeadline: TaskWithDeadline = TaskWithDeadline()
-                currentTaskWithDeadline.taskID = now[0].taskID
+                currentTaskWithDeadline.taskID = now.taskID
                 currentTaskWithDeadline.dagDeadline = dagsList[i].deadlineTime
                 table1[done] = currentTaskWithDeadline
                 done = done + 1
@@ -343,7 +408,7 @@ def printer_function(filename: str) -> None:
                 )
                 table2[done] = currentTaskWithFinishTime
                 done = done + 1
-
+        debug("are we here")
         # sorted(table1)
         # sorted(table2)
 
@@ -364,6 +429,7 @@ def schedule_task(
     procID: int, earliestPossibleStart: int, taskID: int, exeTime: int
 ) -> int:
     endTime: int = 0  # execution time of all tasks
+    debug(f"ur mum: {output[procID].numberOfTasks}")
     taskCount: int = output[procID].numberOfTasks
     if taskCount > 0:
         endTime = (
@@ -375,10 +441,7 @@ def schedule_task(
     history: int = 0  # counts tasks completed
     cache: bool = False
     j: int = taskCount - 1
-    # debug(f"line:{get_linenumber()} -> j:{j}")
     while j >= 0:
-        # debug(f"line:{get_linenumber()} -> taskID[j]:{taskType[output[procID].taskIDs[j]]}")
-        # debug(f"line:{get_linenumber()} -> taskType[taskID]:{taskType[taskID]}")
         if taskType[output[procID].taskIDs[j]] == taskType[taskID]:
             cache = True
         history += 1
@@ -402,38 +465,42 @@ def initialize_processors() -> None:
 
 def schedule_dag(_dagID: int) -> None:
     global dagsList
+    global earliestStart
     currentDependency: Dependency = dagsList[_dagID].firstDependency
-    while currentDependency != None:
-        # debug(dagsList[_dagID].__str__())
-        # debug(dagsList[_dagID].firstDependency.beforeID)
-        fromID = dagsList[_dagID].firstDependency.beforeID
-        toID = dagsList[_dagID].firstDependency.afterID
+    while currentDependency:
+        fromID = currentDependency.beforeID
+        toID = currentDependency.afterID
         # c code -> inDegree[to]++;
         # The amount of parent tasks pointing to this one
         inDegree[toID] = inDegree[toID] + 1
-        currentDependency = dagsList[_dagID].firstDependency.next
+        currentDependency = currentDependency.next
     topsortSize: int = 0
     topsortPtr: int = 0
-    ptr: Task = dagsList[_dagID].firstTask
+    currentTask: Task = dagsList[_dagID].firstTask
+    #debug(dagsList[_dagID].firstTask)
     arrivalTime: int = dagsList[_dagID].arrivalTime
-    while ptr != None:
-        _taskID: int = ptr.taskID
-        if inDegree[_taskID] == 0:
-            topsortOrder[topsortSize] = _taskID
+    #debug(dagsList[_dagID].arrivalTime)
+    while currentTask:
+        #debug(currentTask)
+        taskID: int = currentTask.taskID
+        if inDegree[taskID] == 0:
+            topsortOrder[topsortSize] = taskID
             topsortSize += 1
-        executionTime[_taskID] = ptr.executionTime
-        taskType[_taskID] = ptr.taskType
+        executionTime[taskID] = currentTask.executionTime
+        taskType[taskID] = currentTask.taskType
         for i in range(numProcessors):
-            earliestStart[i][_taskID] = arrivalTime
-        ptr = ptr.next
+            earliestStart[i][taskID] = arrivalTime
+            #debug(earliestStart[i][taskID])
+        currentTask = currentTask.next
+        #debug(currentTask)
     while topsortPtr < topsortSize:
         currentID: int = topsortOrder[topsortPtr]
         topsortPtr += 1
         # debug(dagsList)
-        _list: Dependency = dagsList[_taskID].firstDependency
+        _list: Dependency = dagsList[taskID].firstDependency
         while _list != None:
-            fromID: int =  dagsList[_taskID].firstDependency.beforeID
-            toID: int =  dagsList[_taskID].firstDependency.afterID
+            fromID: int =  dagsList[taskID].firstDependency.beforeID
+            toID: int =  dagsList[taskID].firstDependency.afterID
             if currentID == fromID:
                 inDegree[toID] = inDegree[toID] - 1
                 if inDegree[toID] == 0:
@@ -448,7 +515,7 @@ def schedule_dag(_dagID: int) -> None:
             currentID,
             executionTime[currentID],
         )
-        _list = dagsList[_taskID].firstDependency
+        _list = dagsList[taskID].firstDependency
         while _list != None:
             fromID: int = _list.beforeID
             toID: int = _list.afterID
@@ -468,6 +535,7 @@ def scheduler() -> None:
         for task in dagsList[i].listOfTasks:
             output[i].taskIDs.append(task.taskID)
             output[i].exeTime.append(task.executionTime)
+            output[i].numberOfTasks = len(dagsList[i].listOfTasks)
         schedule_dag(i)
 
 
