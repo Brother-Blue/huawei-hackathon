@@ -59,8 +59,10 @@ class DAG:
     lastDependency: Dependency
     firstTask: Task
     firstDependency: Dependency
+
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
+
 
 dagsInput = numpy.empty(N, dtype=DAG)
 dagsCount: int = 0
@@ -140,7 +142,7 @@ def print_dag_dependencies(whichDag):
 #     # init
 #     initialize(dagsCount)
 #     for dag, tasks in file.items():
-#         task: str 
+#         task: str
 #         for task in tasks:
 #             # the value of the task
 #             value = tasks[task]
@@ -163,7 +165,7 @@ def print_dag_dependencies(whichDag):
 #                 _type = tasks[task]["Type"]
 
 #             add_task_to_list(dagsCount, taskID, exeTime, _type)
-            
+
 #             if exists:
 #                 for k, v in edges.items():
 #                     if v:
@@ -197,10 +199,10 @@ def reader_function(filename):
     # For each top-level data point in data
     for d in data:
         # tasks for each dag
-        tasks = [] 
+        tasks = []
         dag = DAG()
         # Needed to avoid out of bounds
-        #dagsInput.append(None) 
+        #dagsInput.append(None)
         initialize(dagsCount)
         # Init dag attrs
         dag.dagType = data[d]['Type']
@@ -262,7 +264,7 @@ def cmp_aux2(arg11, arg22):
         return 0
     return 1
 
-begin = time 
+begin = time
 end = time
 
 def printer_function(filename: str) -> None:
@@ -437,7 +439,7 @@ def schedule_dag(_id: int) -> None:
             _list = _list.next
 
 def scheduler() -> None:
-# fill this function, you have dags in input array, and you need to schedule them to processors in output array
+    # fill this function, you have dags in input array, and you need to schedule them to processors in output array
     for i in range(dagsCount):
         #schedule dags one by one
         schedule_dag(i)

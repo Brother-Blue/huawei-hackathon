@@ -1,0 +1,12 @@
+output[0][j->0] -> taskIDs[j]: 0 startTime[j]: 0 startTime[j] + exeTime[j]: 10,output[0][j->1] -> taskIDs[j]: 1000 startTime[j]: 60 startTime[j] + exeTime[j]: 69,
+output[1][j->0] -> taskIDs[j]: 1 startTime[j]: 11 startTime[j] + exeTime[j]: 31,output[1][j->1] -> taskIDs[j]: 1001 startTime[j]: 70 startTime[j] + exeTime[j]: 88,
+output[2][j->0] -> taskIDs[j]: 2 startTime[j]: 12 startTime[j] + exeTime[j]: 42,output[2][j->1] -> taskIDs[j]: 1002 startTime[j]: 71 startTime[j] + exeTime[j]: 98,
+output[3][j->0] -> taskIDs[j]: 3 startTime[j]: 43 startTime[j] + exeTime[j]: 53,output[3][j->1] -> taskIDs[j]: 1003 startTime[j]: 99 startTime[j] + exeTime[j]: 108,
+
+
+
+
+makespan: 108
+stdev: 0.185297
+costFunction: 0.139
+spent: 0

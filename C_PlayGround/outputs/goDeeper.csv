@@ -1,0 +1,7 @@
+output[0][j->0] -> taskIDs[j]: 0 startTime[j]: 0 startTime[j] + exeTime[j]: 10,output[0][j->1] -> taskIDs[j]: 3 startTime[j]: 43 startTime[j] + exeTime[j]: 53,
+output[1][j->0] -> taskIDs[j]: 1 startTime[j]: 11 startTime[j] + exeTime[j]: 31,
+output[2][j->0] -> taskIDs[j]: 2 startTime[j]: 12 startTime[j] + exeTime[j]: 42,
+makespan: 53
+stdev: 0.088944
+costFunction: 0.283
+spent: 0
