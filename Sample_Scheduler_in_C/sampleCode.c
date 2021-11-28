@@ -325,7 +325,8 @@ void printer_function(char *filename)
     fprintf(f, "%0.3lf\n", costFunction);
 
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    int spent = (int)(time_spent * 1000);
+    int spent = (int)(time_spent * 1000000);
+    printf("%d", spent);
     fprintf(f, "%d\n", spent);
     fclose(f);
 }
@@ -349,6 +350,7 @@ int schedule_task(int procID, int earliestPossibleStart, int taskID, int exeTime
     // check if task of the same was in the nearest past
     int history = 0;
     bool cache = false;
+    printf("%d\n", cache);
     for (int j = taskCount - 1; j >= 0; j--)
     {
         if (taskType[output[procID].taskIDs[j]] == taskType[taskID])
